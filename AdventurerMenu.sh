@@ -466,7 +466,7 @@ while true; do
     echo "-------------------------------------------------------------------------------"
     echo -e "  ${CYAN}0)${NC} Quit"
     echo "-------------------------------------------------------------------------------"
-    read -p "Enter your choice [1-12]: " choice
+    read -p "Enter your choice [1-11]: " choice
     
     case $choice in
         1) install_update_server ;;
