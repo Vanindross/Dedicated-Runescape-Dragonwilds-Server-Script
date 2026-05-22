@@ -65,6 +65,7 @@ Note: The script will automatically create a dedicated steam user and handle per
 10 ) Configure Log Rotation: Sets up `/etc/logrotate.d/` rules for your server logs.
 
 11 ) Configure Automated Updates: Creates a systemd timer that pings the Steam API daily to check against your local build ID, automatically applying updates only when necessary.
+<img width="879" height="685" alt="image" src="https://github.com/user-attachments/assets/4aff6c11-457f-4185-8315-61150a64e726" />
 
 ## 📂 Directory Structure
 
