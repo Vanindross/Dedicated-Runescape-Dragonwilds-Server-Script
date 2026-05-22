@@ -27,6 +27,7 @@ GAME_LOG_DIR="$SERVER_DIR/RSDragonwilds/Saved/Logs" # Target internal game logs 
 
 # --- Headless Auto-Update Check ---
 if [[ "$1" == "--check-updates" ]]; then
+        echo "Starting automated update check..."
     # Parse local build ID from the Steam appmanifest
     LOCAL_BUILD=$(awk -F'"' '/"buildid"/{print $4}' "$SERVER_DIR/steamapps/appmanifest_4019830.acf" 2>/dev/null)
     
@@ -35,18 +36,24 @@ if [[ "$1" == "--check-updates" ]]; then
     
     # Abort if the API is down to prevent false positives
     if [ -z "$REMOTE_BUILD" ] || [ "$REMOTE_BUILD" == "null" ]; then
+        echo "Error: Steam API unreadable or offline. Aborting."
         exit 1 
     fi
     
     if [ "$LOCAL_BUILD" != "$REMOTE_BUILD" ]; then
+        echo "New build detected! Local: $LOCAL_BUILD | Remote: $REMOTE_BUILD"
+        echo "Stopping server and initiating update process..."
         _do_stop_server
         _do_backup_saves "AutoUpdate_Safety"
         _do_update_server
         
         # Bring it back up if systemd is managing it
         if [ -f "/etc/systemd/system/${SERVICE_NAME}.service" ]; then
+            echo "Update complete. Restarting systemd service."
             sudo systemctl start $SERVICE_NAME
         fi
+    else
+        echo "Server is up to date (Build: $LOCAL_BUILD). No action taken."
     fi
     exit 0
 fi
@@ -453,7 +460,7 @@ while true; do
     echo -e "  ${CYAN}7)${NC} Restore Backup"
     echo -e "  ${CYAN}8)${NC} Edit Configuration (DedicatedServer.ini)"
     echo -e "${GREEN}----------------------Automate your server-------------------------------------${NC}"
-    echo -e "  ${CYAN}9)${NC} Build Systemd Service (run server as service with )"
+    echo -e "  ${CYAN}9)${NC} Build Systemd Service (start-on-boot)"
     echo -e "  ${CYAN}10)${NC} Configure Log Rotation"
     echo -e "  ${CYAN}11)${NC} Configure Automated Updates"
     echo "-------------------------------------------------------------------------------"
