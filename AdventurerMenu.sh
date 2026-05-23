@@ -398,7 +398,7 @@ configure_autoupdate() {
     SCRIPT_PATH=$(realpath "$0")
 
     # Build the executing service
-    cat <<EOF | sudo tee /etc/systemd/system/dragonwilds-updater.service > /dev/null
+cat <<EOF | sudo tee /etc/systemd/system/dragonwilds-updater.service > /dev/null
 [Unit]
 Description=Dragonwilds Update Checker
 Wants=network-online.target
@@ -406,7 +406,9 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$SCRIPT_PATH --check-updates
+ExecStart=$(realpath "$0") --check-updates
+StandardOutput=append:$LOG_FILE
+StandardError=append:$LOG_FILE
 EOF
 
     # Build the timer
