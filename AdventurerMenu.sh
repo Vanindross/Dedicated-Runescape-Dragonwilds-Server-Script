@@ -25,39 +25,6 @@ SESSION_NAME="rsdragonwilds"
 LOGROTATE_CONF="/etc/logrotate.d/dragonwilds"
 GAME_LOG_DIR="$SERVER_DIR/RSDragonwilds/Saved/Logs" # Target internal game logs too
 
-# --- Headless Auto-Update Check ---
-if [[ "$1" == "--check-updates" ]]; then
-        echo "Starting automated update check..."
-    # Parse local build ID from the Steam appmanifest
-    LOCAL_BUILD=$(awk -F'"' '/"buildid"/{print $4}' "$SERVER_DIR/steamapps/appmanifest_4019830.acf" 2>/dev/null)
-    
-    # Query Steam Web API for the remote public build ID
-    REMOTE_BUILD=$(curl -sL https://api.steamcmd.net/v1/info/4019830 | jq -r '.data."4019830".depots.branches.public.buildid')
-    
-    # Abort if the API is down to prevent false positives
-    if [ -z "$REMOTE_BUILD" ] || [ "$REMOTE_BUILD" == "null" ]; then
-        echo "Error: Steam API unreadable or offline. Aborting."
-        exit 1 
-    fi
-    
-    if [ "$LOCAL_BUILD" != "$REMOTE_BUILD" ]; then
-        echo "New build detected! Local: $LOCAL_BUILD | Remote: $REMOTE_BUILD"
-        echo "Stopping server and initiating update process..."
-        _do_stop_server
-        _do_backup_saves "AutoUpdate_Safety"
-        _do_update_server
-        
-        # Bring it back up if systemd is managing it
-        if [ -f "/etc/systemd/system/${SERVICE_NAME}.service" ]; then
-            echo "Update complete. Restarting systemd service."
-            sudo systemctl start $SERVICE_NAME
-        fi
-    else
-        echo "Server is up to date (Build: $LOCAL_BUILD). No action taken."
-    fi
-    exit 0
-fi
-
 # --- Colors ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -157,6 +124,40 @@ _do_update_server() {
         sudo -H -u $STEAM_USER rm -rf "$TEMP_SAVED"
     fi
 }
+
+# --- Headless Auto-Update Check ---
+if [[ "$1" == "--check-updates" ]]; then
+        echo "Starting automated update check..."
+    # Parse local build ID from the Steam appmanifest
+    LOCAL_BUILD=$(awk -F'"' '/"buildid"/{print $4}' "$SERVER_DIR/steamapps/appmanifest_4019830.acf" 2>/dev/null)
+    
+    # Query Steam Web API for the remote public build ID
+    REMOTE_BUILD=$(curl -sL https://api.steamcmd.net/v1/info/4019830 | jq -r '.data."4019830".depots.branches.public.buildid')
+    
+    # Abort if the API is down to prevent false positives
+    if [ -z "$REMOTE_BUILD" ] || [ "$REMOTE_BUILD" == "null" ]; then
+        echo "Error: Steam API unreadable or offline. Aborting."
+        exit 1 
+    fi
+    
+    if [ "$LOCAL_BUILD" != "$REMOTE_BUILD" ]; then
+        echo "New build detected! Local: $LOCAL_BUILD | Remote: $REMOTE_BUILD"
+        echo "Stopping server and initiating update process..."
+        _do_stop_server
+        _do_backup_saves "AutoUpdate_Safety"
+        _do_update_server
+        
+        # Bring it back up if systemd is managing it
+        if [ -f "/etc/systemd/system/${SERVICE_NAME}.service" ]; then
+            echo "Update complete. Restarting systemd service."
+            sudo systemctl start $SERVICE_NAME
+        fi
+    else
+        echo "Server is up to date (Build: $LOCAL_BUILD). No action taken."
+    fi
+    exit 0
+fi
+
 # --- 1. Install / Update Server ---
 install_update_server() {
     ensure_steam_user
